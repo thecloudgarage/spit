@@ -25,6 +25,8 @@ eksctl create nodegroup \
   --nodes-max 5 \
   --region us-east-2
 
+eksctl get nodegroup --cluster $CLUSTER_NAME --region us-east-2
+
 # Create IAM Policy
 # Obtain role from cluster creation events
 
@@ -35,12 +37,12 @@ ROLE=$(aws cloudformation list-stack-resources  --stack-name $NG_STACK_NAME | jq
 # Confirm role
 echo $ROLE
 
-leftoverPolicyArn=$(aws iam list-policies --query 'Policies[?PolicyName==`AmazonEKSClusterAutoscalerPolicy`].Arn' --output text)
+leftoverPolicyArn=$(aws iam list-policies --query 'Policies[?PolicyName==`AmazonEKSClusterAutoscalerPolicySpit`].Arn' --output text)
 aws iam delete-policy --policy-arn $leftoverPolicyArn
 
 # Create the policy
 POLICY_ARN=$(aws iam create-policy \
-    --policy-name AmazonEKSClusterAutoscalerPolicy \
+    --policy-name AmazonEKSClusterAutoscalerPolicySpit \
     --policy-document \
 '{
     "Version": "2012-10-17",
@@ -75,7 +77,7 @@ aws iam list-attached-role-policies --role-name $ROLE
 
 rm -rf ca.yaml
 # Prepare the manifest file with our cluster name and options
-curl https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml | sed  "s/<YOUR CLUSTER NAME>/$CLUSTER_NAME\n            - --balance-similar-node-groups\n            - --skip-nodes-with-system-pods=false/g" > ca.yaml
+curl https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml | sed  "s/<YOUR CLUSTER NAME>/$CLUSTER_NAME\n            - --balance-similar-node-groups\n            - --skip-nodes-with-system-pods=false\n            - --- --scale-down-unneeded-time=60s/g" > ca.yaml
 
 KUBECONFIG=$HOME/$CLUSTER_NAME/$CLUSTER_NAME-eks-cluster.kubeconfig
 # Create deployment
@@ -93,4 +95,6 @@ kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
 kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/metrics-server.yaml
 kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/website.yaml
 kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/website-hpa.yaml
+kubectl get 
+#REF: https://awstip.com/this-code-works-kubernetes-cluster-autoscaler-on-amazon-eks-c2d059022e1c
 ```
