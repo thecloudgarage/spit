@@ -74,7 +74,7 @@ aws iam attach-role-policy \
 # Confirm role policies
 aws iam list-attached-role-policies --role-name $ROLE
 
-
+# Deploy k8s auto-scaler
 rm -rf ca.yaml
 # Prepare the manifest file with our cluster name and options
 curl https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml | sed  "s/<YOUR CLUSTER NAME>/$CLUSTER_NAME\n            - --balance-similar-node-groups\n            - --skip-nodes-with-system-pods=false\n            - --- --scale-down-unneeded-time=60s/g" > ca.yaml
@@ -95,6 +95,20 @@ kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
 kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/metrics-server.yaml
 kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/website.yaml
 kubectl apply -f kubectl apply -f https://raw.githubusercontent.com/thecloudgarage/spit/main/kubernetes/website-hpa.yaml
-kubectl get 
+kubectl get all -n demo
+
+### TO DELETE....
+eksctl delete nodegroup \
+  --cluster $CLUSTER_NAME \
+  --name $NG_NAME \
+  --region us-east-2
+
+aws cloudformation list-stacks --stack-status-filter DELETE_IN_PROGRESS --region us-east-2
+
+eksctl delete cluster $CLUSTER_NAME --region us-east-2
+
+aws cloudformation list-stacks --stack-status-filter DELETE_IN_PROGRESS --region us-east-2
+
 #REF: https://awstip.com/this-code-works-kubernetes-cluster-autoscaler-on-amazon-eks-c2d059022e1c
 ```
+
